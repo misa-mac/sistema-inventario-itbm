@@ -1,6 +1,7 @@
 const express = require('express');
 const dotenv = require('dotenv');
-const pool = require('./database');
+const cors = require('cors');
+const inventoryRoutes = require('./src/routes/inventoryRoutes');
 
 // Configurar variables de entorno
 dotenv.config();
@@ -8,8 +9,12 @@ dotenv.config();
 // Inicializar la aplicación Express
 const app = express();
 
-// Middleware para procesar datos en formato JSON
+// Middleware
+app.use(cors());
 app.use(express.json());
+
+// Registro de rutas
+app.use('/api/inventory', inventoryRoutes);
 
 // Puerto de ejecución
 const PORT = process.env.PORT || 3000;
