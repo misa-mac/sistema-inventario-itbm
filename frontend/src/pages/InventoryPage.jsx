@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 
 const InventoryPage = () => {
   const [hardware, setHardware] = useState([]);
@@ -7,46 +7,57 @@ const InventoryPage = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Petición real al backend
-    axios.get('http://localhost:3000/api/inventory') // Ajusta según tu ruta real definida en index.js
+    api.get('/inventory')
       .then(res => {
         setHardware(res.data);
         setLoading(false);
       })
       .catch(err => {
         console.error('Error fetching inventory:', err);
-        setError('No se pudo cargar el inventario desde la base de datos.');
+        setError('No se pudo cargar el inventario.');
         setLoading(false);
       });
   }, []);
 
-  if (loading) return <div className="p-8 text-center">Cargando inventario...</div>;
-  if (error) return <div className="p-8 text-red-500 text-center">{error}</div>;
+  if (loading) return <div className="text-center p-8">Cargando...</div>;
+  if (error) return <div className="text-center p-8 text-accent">{error}</div>;
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">Inventario de Hardware</h1>
-      <div className="bg-white shadow rounded overflow-hidden">
-        <table className="w-full text-left">
-          <thead className="bg-gray-200">
-            <tr>
-              <th className="p-4">UUID</th>
-              <th className="p-4">Nombre</th>
-              <th className="p-4">Tipo</th>
-              <th className="p-4">Estado</th>
+    <div className="inventory-container">
+      <h1 className="text-xl font-bold mb-6">Inventario de Hardware</h1>
+      
+      {/* Vista de Tabla (Escritorio) */}
+      <table className="inventory-table">
+        <thead>
+          <tr>
+            <th>UUID</th>
+            <th>Nombre</th>
+            <th>Tipo</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          {hardware.map((item) => (
+            <tr key={item.activo_uuid}>
+              <td className="font-mono">{item.activo_uuid}</td>
+              <td>{item.nombre}</td>
+              <td>{item.tipo}</td>
+              <td>{item.estado}</td>
             </tr>
-          </thead>
-          <tbody>
-            {hardware.map((item) => (
-              <tr key={item.activo_uuid} className="border-b hover:bg-gray-50">
-                <td className="p-4 font-mono text-xs">{item.activo_uuid}</td>
-                <td className="p-4">{item.nombre}</td>
-                <td className="p-4">{item.tipo}</td>
-                <td className="p-4">{item.estado}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+          ))}
+        </tbody>
+      </table>
+
+      {/* Vista de Tarjetas (Móvil) */}
+      <div className="inventory-cards">
+        {hardware.map((item) => (
+          <div key={item.activo_uuid} className="card">
+            <div><strong>Nombre:</strong> {item.nombre}</div>
+            <div><strong>Tipo:</strong> {item.tipo}</div>
+            <div><strong>Estado:</strong> {item.estado}</div>
+            <div className="font-mono text-sm mt-2">{item.activo_uuid}</div>
+          </div>
+        ))}
       </div>
     </div>
   );

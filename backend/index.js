@@ -2,6 +2,7 @@ const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const inventoryRoutes = require('./src/routes/inventoryRoutes');
+const authRoutes = require('./src/routes/authRoutes');
 
 // Configurar variables de entorno
 dotenv.config();
@@ -15,6 +16,7 @@ app.use(express.json());
 
 // Registro de rutas
 app.use('/api/inventory', inventoryRoutes);
+app.use('/api/auth', authRoutes);
 
 // Puerto de ejecución
 const PORT = process.env.PORT || 3000;

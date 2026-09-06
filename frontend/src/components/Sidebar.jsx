@@ -5,20 +5,22 @@ const Sidebar = () => {
   const menuItems = [
     { path: '/', name: 'Dashboard', icon: <LayoutDashboard size={20} /> },
     { path: '/inventory', name: 'Inventario', icon: <Package size={20} /> },
-    { path: '/scanner', name: 'Escáner QR', icon: <QrCode size={20} /> },
+    { path: '/scanner', name: 'Escanear QR', icon: <QrCode size={20} /> },
     { path: '/audits', name: 'Auditorías', icon: <ClipboardList size={20} /> },
     { path: '/settings', name: 'Configuración', icon: <Settings size={20} /> },
   ];
 
   return (
-    <aside className="w-64 bg-gray-800 text-white min-h-screen p-4">
-      <h2 className="text-xl font-bold mb-6 text-center">ITBM System</h2>
-      <nav className="flex flex-col gap-2">
+    <aside className="sidebar-container">
+      <div className="logo-placeholder">
+        <img src="/logo-itbm.jpg" alt="ITBM Logo" />
+      </div>
+      <nav className="sidebar-nav">
         {menuItems.map((item) => (
           <Link
             key={item.path}
             to={item.path}
-            className="flex items-center gap-3 p-3 rounded hover:bg-gray-700 transition"
+            className="sidebar-link"
           >
             {item.icon}
             {item.name}

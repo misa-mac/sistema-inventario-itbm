@@ -34,7 +34,8 @@ exports.create = async (req, res) => {
 
 exports.updateStatus = async (req, res) => {
   const { uuid } = req.params;
-  const { ambiente_id, accion, usuario_id, observaciones } = req.body;
+  const { ambiente_id, accion, observaciones } = req.body;
+  const usuario_id = req.user.uuid; // ID extraído del token JWT
   
   const client = await pool.connect();
   try {
@@ -48,7 +49,7 @@ exports.updateStatus = async (req, res) => {
     const traceQuery = `
       INSERT INTO trazabilidad (activo_uuid, usuario_id, ambiente_id, accion, observaciones)
       VALUES ($1, $2, $3, $4, $5)`;
-    await client.query(traceQuery, [uuid, usuario_id, ambiente_id, accion, observaciones]);
+    await client.query(traceQuery, [uuid, usuario_id, ambiente_id, accion || 'TRASLADO', observaciones]);
     
     await client.query('COMMIT');
     res.json({ message: 'Traslado registrado correctamente' });
