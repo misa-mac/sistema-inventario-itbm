@@ -1,32 +1,50 @@
 const express = require('express');
-const dotenv = require('dotenv');
 const cors = require('cors');
-const inventoryRoutes = require('./src/routes/inventoryRoutes');
-const authRoutes = require('./src/routes/authRoutes');
+const dotenv = require('dotenv');
+const { sequelize, connectDB } = require('./database');
 
-// Configurar variables de entorno
+// Importar Modelos para registrarlos antes del sync
+require('./src/models/Usuario');
+require('./src/models/Ambiente');
+require('./src/models/Activo');
+require('./src/models/Movimiento');
+
+// Importar Rutas
+const authRoutes = require('./src/routes/authRoutes');
+const inventoryRoutes = require('./src/routes/inventoryRoutes');
+
 dotenv.config();
 
-// Inicializar la aplicación Express
 const app = express();
 
-// Middleware
+// Middlewares
 app.use(cors());
 app.use(express.json());
 
-// Registro de rutas
-app.use('/api/inventory', inventoryRoutes);
+// Rutas
 app.use('/api/auth', authRoutes);
+app.use('/api/inventory', inventoryRoutes);
 
-// Puerto de ejecución
+// Configuración Servidor
 const PORT = process.env.PORT || 3000;
 
-// Ruta de prueba básica
 app.get('/', (req, res) => {
-    res.send('¡Servidor del Sistema de Inventario ITBM funcionando!');
+  res.send('API v2 Sistema de Inventario Funcionando 🚀');
 });
 
-// Iniciar el servidor
-app.listen(PORT, () => {
-    console.log(`Servidor corriendo en el puerto ${PORT}`);
-});
+const startServer = async () => {
+  await connectDB();
+  
+  try {
+    await sequelize.sync({ alter: true });
+    console.log('✅ Modelos de BD sincronizados exitosamente.');
+  } catch (err) {
+    console.error('❌ Error sincronizando modelos:', err.message);
+  }
+
+  app.listen(PORT, () => {
+    console.log(`✅ Servidor corriendo en puerto ${PORT}`);
+  });
+};
+
+startServer();

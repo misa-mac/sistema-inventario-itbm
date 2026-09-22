@@ -1,13 +1,25 @@
 const express = require('express');
-const router = express.Router();
-const controller = require('../controllers/inventoryController');
-const authMiddleware = require('../middlewares/authMiddleware');
-const authorize = require('../middlewares/rbacMiddleware');
+const inventoryController = require('../controllers/inventoryController');
+const jwt = require('jsonwebtoken');
 
-// Aplicamos los roles ajustados a los valores exactos en BD: 'admin', 'tecnico', 'auditor'
-router.get('/', authMiddleware, authorize(['admin', 'tecnico', 'auditor']), controller.getAll);
-router.get('/:uuid', authMiddleware, authorize(['admin', 'tecnico', 'auditor']), controller.getById);
-router.post('/', authMiddleware, authorize(['admin', 'tecnico']), controller.create);
-router.patch('/:uuid/status', authMiddleware, authorize(['admin', 'tecnico']), controller.updateStatus);
+const router = express.Router();
+
+const verifyToken = (req, res, next) => {
+  const token = req.headers['authorization']?.split(' ')[1];
+  if (!token) return res.status(403).send('Token requerido');
+  
+  jwt.verify(token, process.env.JWT_SECRET || 'secret_itbm_inventario_v2', (err, decoded) => {
+    if (err) return res.status(401).send('Token inválido');
+    req.user = decoded;
+    next();
+  });
+};
+
+router.use(verifyToken);
+
+router.get('/', inventoryController.getAll);
+router.get('/:id', inventoryController.getById);
+router.post('/', inventoryController.create);
+router.put('/:id/status', inventoryController.updateStatus);
 
 module.exports = router;

@@ -1,17 +1,21 @@
-const { Pool } = require('pg');
+const { Sequelize } = require('sequelize');
 const dotenv = require('dotenv');
 
-// Cargar variables de entorno
 dotenv.config();
 
-// Configurar los parámetros de conexión a PostgreSQL
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
+const sequelize = new Sequelize(process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/inventario_db', {
+  dialect: 'postgres',
+  logging: false, // console.log to see SQL queries
+  pool: { max: 5, min: 0, acquire: 30000, idle: 10000 }
 });
 
-// Probar que la conexión funcione
-pool.connect()
-    .then(() => console.log('Conexión a la base de datos PostgreSQL exitosa'))
-    .catch(err => console.error('Error al conectar a la base de datos', err.stack));
+const connectDB = async () => {
+  try {
+    await sequelize.authenticate();
+    console.log('✅ Base de datos conectada vía Sequelize');
+  } catch (error) {
+    console.error('❌ Error conectando a la base de datos:', error.message);
+  }
+};
 
-module.exports = pool;
+module.exports = { sequelize, connectDB };

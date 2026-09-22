@@ -1,0 +1,48 @@
+===========================================================
+RESUMEN DEL PROYECTO: SISTEMA DE INVENTARIO ITBM v2
+===========================================================
+
+1. REINICIO DEL PROYECTO (Clean Slate)
+-----------------------------------------------------------
+Debido a conflictos con dependencias obsoletas y configuraciones heredadas (PWA, Supabase), tomamos la decisión de borrar todo el código antiguo y reconstruir el sistema desde cero (versión 2.0). Esto garantizó una arquitectura limpia, profesional y libre de errores.
+
+2. ARQUITECTURA DEL BACKEND (API RESTful)
+-----------------------------------------------------------
+Se construyó un backend robusto enfocado en la integridad de datos:
+- Stack Tecnológico: Node.js, Express, PostgreSQL.
+- ORM (Sequelize): Reemplazamos las consultas SQL manuales por modelos orientados a objetos (Usuario, Activo, Ambiente, Movimiento).
+- Sincronización Automática: La base de datos y sus tablas se crean y actualizan automáticamente al arrancar el servidor mediante `sequelize.sync()`.
+- Validaciones: Se implementó `Joi` en los controladores para asegurar que los datos enviados por el cliente tengan el formato correcto antes de tocar la base de datos.
+- Seguridad: Autenticación mediante JWT (JSON Web Tokens) y contraseñas encriptadas con `bcrypt`.
+
+3. ARQUITECTURA DEL FRONTEND (React + Vite)
+-----------------------------------------------------------
+Se construyó un frontend ultrarrápido y reactivo:
+- Stack Tecnológico: React 18 inicializado con Vite (reemplazando a Create React App/Scripts para mayor velocidad).
+- Enrutamiento: React Router DOM para navegación sin recargar la página.
+- Estado Global: Creación de un `AuthContext` para mantener la sesión del usuario a lo largo de toda la aplicación utilizando el LocalStorage.
+- Consumo de API: Configuración de Axios (`api.js`) con un interceptor que inyecta automáticamente el Token JWT en cada petición al backend.
+
+4. SISTEMA DE DISEÑO (Corporate Modern - Tailwind CSS)
+-----------------------------------------------------------
+Se abandonó el estilo "Glassmorphism" por un diseño corporativo y técnico ("Stitch QR Lab Inventory System"):
+- Tailwind CSS: Se instaló y configuró Tailwind para manejar los estilos.
+- Configuración Personalizada: Se trasladó toda la paleta de colores del laboratorio (Deep Navy, Tech Blue, Surface, Error) y la tipografía `Inter` al archivo `tailwind.config.js`.
+- Layouts Construidos:
+  * App Layout: Un panel de control (Dashboard) con un menú lateral fijo (Sidebar) y un encabezado (Header).
+  * Login Page: Una tarjeta de autenticación profesional y limpia.
+  * Inventory Page: Una tabla de datos estructurada con indicadores de estado semánticos (Activo = Verde, Reparación = Ámbar, Baja = Rojo).
+
+5. ESTADO ACTUAL
+-----------------------------------------------------------
+El código está 100% escrito y funcional. Ambos entornos (Frontend y Backend) están listos para ejecutarse localmente apuntando a una base de datos PostgreSQL local (`inventario_db`).
+
+6. ACTIVIDADES Y FUNCIONALIDADES PENDIENTES (Roadmap)
+-----------------------------------------------------------
+El sistema cuenta con la base estructural lista, pero aún faltan por desarrollar los siguientes módulos administrativos:
+- Gestión de Activos: Formularios para crear nuevos activos en el sistema y para editar los detalles técnicos de los activos existentes.
+- Generación de QR: Funcionalidad para generar y exportar nuevos códigos QR para los equipos ingresados.
+- Reportes: Motor de reportes para generar estadísticas, exportaciones (PDF/Excel) y diseño de nuevos formatos de reportes para auditoría.
+- Gestión de Infraestructura: Formularios para dar de alta (crear) nuevos "Ambientes" o laboratorios dentro de la institución.
+- Control de Acceso (RBAC): Módulo avanzado para editar perfiles de usuarios y gestionar Roles y Permisos (Role-Based Access Control).
+- Funciones de Escritorio: Otras opciones administrativas complejas que están diseñadas específicamente para el panel de escritorio (Desktop Admin) por requerir alto detalle técnico y que no se pueden realizar fácilmente desde una aplicación móvil.
