@@ -8,8 +8,9 @@ import AmbientesPage from './pages/AmbientesPage';
 import UsuariosPage from './pages/UsuariosPage';
 import DashboardPage from './pages/DashboardPage';
 import ConfiguracionPage from './pages/ConfiguracionPage';
+import HistorialPage from './pages/HistorialPage';
 import api from './services/api';
-import { LayoutDashboard, Monitor, LogOut, Settings, Bell, Search, Menu, FileText, Building, Shield, Users, AlertTriangle, Info } from 'lucide-react';
+import { LayoutDashboard, Monitor, LogOut, Settings, Bell, Search, Menu, FileText, Building, Shield, Users, AlertTriangle, Info, Clock } from 'lucide-react';
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
@@ -24,6 +25,7 @@ const Sidebar = () => {
     { path: '/', icon: <LayoutDashboard size={20} />, label: 'Panel de Control' },
     { path: '/inventario', icon: <Monitor size={20} />, label: 'Activos Fijos' },
     { path: '/ambientes', icon: <Building size={20} />, label: 'Ambientes' },
+    { path: '/historial', icon: <Clock size={20} />, label: 'Movimientos' },
     { path: '/reportes', icon: <FileText size={20} />, label: 'Reportes' },
     { path: '/usuarios', icon: <Users size={20} />, label: 'Roles y Permisos' },
     { path: '/configuracion', icon: <Settings size={20} />, label: 'Configuración' },
@@ -99,35 +101,43 @@ const Header = () => {
   const { user } = useAuth();
   const [showNotifs, setShowNotifs] = useState(false);
   const [notifs, setNotifs] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const fetchNotifs = async () => {
+    if (!user) return;
+    try {
+      const res = await api.get('/notificaciones');
+      setNotifs(res.data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   useEffect(() => {
-    if (user) {
-      api.get('/reports/summary').then(res => {
-        const danados = res.data.porEstado.find(e => e.estado === 'Dañado')?.cantidad || 0;
-        let newNotifs = [];
-        
-        if (danados > 0) {
-          newNotifs.push({
-            id: 1,
-            title: 'Atención Requerida',
-            message: `Existen ${danados} equipos registrados con estado "Dañado".`,
-            type: 'warning',
-            time: 'Reciente'
-          });
-        }
-        
-        newNotifs.push({
-          id: 2,
-          title: 'Inicio de Sesión',
-          message: `Bienvenido al sistema, ${user.nombre || 'Usuario'}.`,
-          type: 'info',
-          time: 'Hoy'
-        });
-        
-        setNotifs(newNotifs);
-      }).catch(console.error);
-    }
+    fetchNotifs();
+    // Poll notifications every minute
+    const interval = setInterval(fetchNotifs, 60000);
+    return () => clearInterval(interval);
   }, [user]);
+
+  const handleMarkAsRead = async () => {
+    if (notifs.length === 0) return;
+    setLoading(true);
+    try {
+      await api.post('/notificaciones/marcar-leidas');
+      setNotifs([]);
+      setShowNotifs(false);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDate = (dateString) => {
+    const d = new Date(dateString);
+    return isNaN(d.getTime()) ? 'Reciente' : d.toLocaleDateString('es-ES', { month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' });
+  };
 
   return (
     <header className="h-16 bg-surface-container-lowest border-b border-surface-container-highest flex items-center justify-between px-4 sm:px-6 sticky top-0 z-40">
@@ -141,12 +151,12 @@ const Header = () => {
         {/* Notificaciones */}
         <div className="relative">
           <button 
-            onClick={() => setShowNotifs(!showNotifs)}
+            onClick={() => { setShowNotifs(!showNotifs); if (!showNotifs) fetchNotifs(); }}
             className="text-on-surface-variant relative p-2 rounded-full hover:bg-surface-container-low transition-colors"
           >
             <Bell size={20} />
             {notifs.length > 0 && (
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full animate-pulse"></span>
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full animate-pulse flex items-center justify-center"></span>
             )}
           </button>
 
@@ -154,22 +164,29 @@ const Header = () => {
             <div className="absolute right-0 mt-2 w-80 bg-surface-container-lowest border border-surface-container-highest rounded-xl shadow-lg overflow-hidden animate-fade-in z-50">
               <div className="p-4 border-b border-surface-container-highest bg-surface-bright flex justify-between items-center">
                 <h3 className="font-medium text-on-surface">Notificaciones</h3>
-                <span className="text-xs bg-primary-container text-on-primary-container px-2 py-0.5 rounded-full font-bold">{notifs.length}</span>
+                {notifs.length > 0 && (
+                  <button onClick={handleMarkAsRead} disabled={loading} className="text-xs text-primary hover:underline font-medium">
+                    Marcar leídas
+                  </button>
+                )}
               </div>
               <div className="max-h-80 overflow-y-auto">
                 {notifs.length === 0 ? (
-                  <div className="p-6 text-center text-on-surface-variant text-sm">No tienes notificaciones.</div>
+                  <div className="p-6 text-center text-on-surface-variant text-sm flex flex-col items-center gap-2">
+                    <Bell size={24} className="text-outline-variant" />
+                    No tienes alertas pendientes.
+                  </div>
                 ) : (
                   notifs.map(n => (
                     <div key={n.id} className="p-4 border-b border-surface-container-highest last:border-0 hover:bg-surface-container/50 transition-colors cursor-default">
                       <div className="flex gap-3">
-                        <div className={`mt-0.5 w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${n.type === 'warning' ? 'bg-amber-100 text-amber-600' : 'bg-primary-container text-primary'}`}>
-                          {n.type === 'warning' ? <AlertTriangle size={14} /> : <Info size={14} />}
+                        <div className={`mt-0.5 w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${n.tipo === 'warning' ? 'bg-amber-100 text-amber-600' : n.tipo === 'error' ? 'bg-error-container text-on-error-container' : 'bg-primary-container text-primary'}`}>
+                          {n.tipo === 'warning' ? <AlertTriangle size={14} /> : n.tipo === 'error' ? <Shield size={14} /> : <Info size={14} />}
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-on-surface mb-0.5">{n.title}</p>
-                          <p className="text-xs text-on-surface-variant leading-relaxed">{n.message}</p>
-                          <p className="text-[10px] text-on-surface-variant/70 mt-2 font-medium uppercase tracking-wider">{n.time}</p>
+                          <p className="text-sm font-medium text-on-surface mb-0.5">{n.titulo}</p>
+                          <p className="text-xs text-on-surface-variant leading-relaxed">{n.mensaje}</p>
+                          <p className="text-[10px] text-on-surface-variant/70 mt-2 font-medium uppercase tracking-wider">{formatDate(n.created_at)}</p>
                         </div>
                       </div>
                     </div>
@@ -264,6 +281,16 @@ function AppContent() {
             <ProtectedRoute>
               <DashboardLayout>
                 <ConfiguracionPage />
+              </DashboardLayout>
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/historial" 
+          element={
+            <ProtectedRoute>
+              <DashboardLayout>
+                <HistorialPage />
               </DashboardLayout>
             </ProtectedRoute>
           } 

@@ -10,25 +10,42 @@ const Movimiento = sequelize.define('Movimiento', {
     defaultValue: DataTypes.UUIDV4,
     primaryKey: true,
   },
+  tipo_evento: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    defaultValue: 'traslado'
+  },
   activo_id: {
     type: DataTypes.UUID,
     allowNull: false,
     references: { model: Activo, key: 'id' }
   },
-  ambiente_origen_id: {
-    type: DataTypes.UUID,
-    allowNull: false,
-    references: { model: Ambiente, key: 'id' }
-  },
-  ambiente_destino_id: {
-    type: DataTypes.UUID,
-    allowNull: false,
-    references: { model: Ambiente, key: 'id' }
-  },
   usuario_id: {
     type: DataTypes.UUID,
     allowNull: false,
     references: { model: Usuario, key: 'id' }
+  },
+  ambiente_origen_id: {
+    type: DataTypes.UUID,
+    allowNull: true,
+    references: { model: Ambiente, key: 'id' }
+  },
+  ambiente_destino_id: {
+    type: DataTypes.UUID,
+    allowNull: true,
+    references: { model: Ambiente, key: 'id' }
+  },
+  estado_anterior: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  estado_nuevo: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  costo_mantenimiento: {
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: true,
   },
   observaciones: {
     type: DataTypes.TEXT,

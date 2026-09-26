@@ -10,6 +10,7 @@ require('./src/models/Ambiente');
 require('./src/models/TipoActivo');
 require('./src/models/Activo');
 require('./src/models/Movimiento');
+require('./src/models/Notificacion');
 
 // Importar Rutas
 const authRoutes = require('./src/routes/authRoutes');
@@ -18,6 +19,8 @@ const ambienteRoutes = require('./src/routes/ambienteRoutes');
 const tipoActivoRoutes = require('./src/routes/tipoActivoRoutes');
 const reportRoutes = require('./src/routes/reportRoutes');
 const usuarioRoutes = require('./src/routes/usuarioRoutes');
+const movimientoRoutes = require('./src/routes/movimientoRoutes');
+const notificacionRoutes = require('./src/routes/notificacionRoutes');
 
 dotenv.config();
 
@@ -37,6 +40,8 @@ app.use('/api/ambientes', ambienteRoutes);
 app.use('/api/tipos-activos', tipoActivoRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/usuarios', usuarioRoutes);
+app.use('/api/movimientos', movimientoRoutes);
+app.use('/api/notificaciones', notificacionRoutes);
 
 // Configuración Servidor
 const PORT = process.env.PORT || 3000;
