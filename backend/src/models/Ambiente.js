@@ -12,6 +12,10 @@ const Ambiente = sequelize.define('Ambiente', {
     allowNull: false,
     unique: true,
   },
+  codigo: {
+    type: DataTypes.INTEGER,
+    unique: true,
+  },
   descripcion: {
     type: DataTypes.STRING,
   },

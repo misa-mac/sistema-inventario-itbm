@@ -15,11 +15,15 @@ const verifyToken = (req, res, next) => {
   });
 };
 
+const upload = require('../middleware/upload');
+
 router.use(verifyToken);
 
 router.get('/', inventoryController.getAll);
+router.get('/next-sequence', inventoryController.getNextSequence);
 router.get('/:id', inventoryController.getById);
-router.post('/', inventoryController.create);
-router.put('/:id/status', inventoryController.updateStatus);
+router.post('/', upload.single('imagen'), inventoryController.create);
+router.put('/:id', upload.single('imagen'), inventoryController.update);
+router.delete('/:id', inventoryController.delete);
 
 module.exports = router;

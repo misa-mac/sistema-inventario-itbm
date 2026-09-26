@@ -1,17 +1,22 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const dotenv = require('dotenv');
 const { sequelize, connectDB } = require('./database');
 
 // Importar Modelos para registrarlos antes del sync
 require('./src/models/Usuario');
 require('./src/models/Ambiente');
+require('./src/models/TipoActivo');
 require('./src/models/Activo');
 require('./src/models/Movimiento');
 
 // Importar Rutas
 const authRoutes = require('./src/routes/authRoutes');
 const inventoryRoutes = require('./src/routes/inventoryRoutes');
+const ambienteRoutes = require('./src/routes/ambienteRoutes');
+const tipoActivoRoutes = require('./src/routes/tipoActivoRoutes');
+const reportRoutes = require('./src/routes/reportRoutes');
 
 dotenv.config();
 
@@ -21,9 +26,15 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Servir archivos estáticos
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // Rutas
 app.use('/api/auth', authRoutes);
 app.use('/api/inventory', inventoryRoutes);
+app.use('/api/ambientes', ambienteRoutes);
+app.use('/api/tipos-activos', tipoActivoRoutes);
+app.use('/api/reports', reportRoutes);
 
 // Configuración Servidor
 const PORT = process.env.PORT || 3000;

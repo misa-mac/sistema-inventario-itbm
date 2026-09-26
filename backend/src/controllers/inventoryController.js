@@ -1,28 +1,42 @@
 const Activo = require('../models/Activo');
 const Ambiente = require('../models/Ambiente');
+const TipoActivo = require('../models/TipoActivo');
 const Movimiento = require('../models/Movimiento');
 const { sequelize } = require('../../database');
 const Joi = require('joi');
 
 const createSchema = Joi.object({
-  nombre: Joi.string().required(),
-  tipo: Joi.string().required(),
+  tipo_activo_id: Joi.string().uuid().required(),
   ambiente_id: Joi.string().uuid().required(),
-  marca: Joi.string().allow('', null).optional(),
-  modelo: Joi.string().allow('', null).optional(),
-  numero_serie: Joi.string().allow('', null).optional(),
-  qr_codigo: Joi.string().allow('', null).optional(),
+  origen: Joi.string().required(),
+  especificacion_origen: Joi.string().allow('', null).optional(),
+  descripcion: Joi.string().allow('', null).optional(),
+  responsable: Joi.string().allow('', null).optional(),
+  fecha_ingreso: Joi.date().optional(),
+  valor: Joi.number().allow(null).optional(),
+  estado: Joi.string().valid('Activo', 'Inactivo', 'Dañado').optional(),
 });
 
-const updateStatusSchema = Joi.object({
-  ambiente_id: Joi.string().uuid().required(),
-  observaciones: Joi.string().allow('', null).optional(),
+const updateSchema = Joi.object({
+  tipo_activo_id: Joi.string().uuid().optional(),
+  ambiente_id: Joi.string().uuid().optional(),
+  origen: Joi.string().optional(),
+  especificacion_origen: Joi.string().allow('', null).optional(),
+  descripcion: Joi.string().allow('', null).optional(),
+  responsable: Joi.string().allow('', null).optional(),
+  fecha_ingreso: Joi.date().optional(),
+  valor: Joi.number().allow(null).optional(),
+  estado: Joi.string().valid('Activo', 'Inactivo', 'Dañado').optional(),
 });
 
 exports.getAll = async (req, res) => {
   try {
     const activos = await Activo.findAll({
-      include: [{ model: Ambiente, as: 'ambiente', attributes: ['nombre'] }]
+      include: [
+        { model: Ambiente, as: 'ambiente', attributes: ['nombre', 'codigo'] },
+        { model: TipoActivo, as: 'tipo', attributes: ['nombre', 'codigo'] }
+      ],
+      order: [['numero_correlativo', 'DESC']]
     });
     res.json(activos);
   } catch (error) {
@@ -34,7 +48,10 @@ exports.getAll = async (req, res) => {
 exports.getById = async (req, res) => {
   try {
     const activo = await Activo.findByPk(req.params.id, {
-      include: [{ model: Ambiente, as: 'ambiente' }]
+      include: [
+        { model: Ambiente, as: 'ambiente' },
+        { model: TipoActivo, as: 'tipo' }
+      ]
     });
     activo ? res.json(activo) : res.status(404).json({ message: 'Activo no encontrado' });
   } catch (error) {
@@ -42,58 +59,95 @@ exports.getById = async (req, res) => {
   }
 };
 
+exports.getNextSequence = async (req, res) => {
+  try {
+    const maxCorrelativo = await Activo.max('numero_correlativo') || 0;
+    res.json({ next: maxCorrelativo + 1 });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error obteniendo secuencia' });
+  }
+};
+
 exports.create = async (req, res) => {
   const { error, value } = createSchema.validate(req.body);
   if (error) return res.status(400).json({ error: error.details[0].message });
   
+  const t = await sequelize.transaction();
+  
   try {
-    const crypto = require('crypto');
-    value.uuid = crypto.randomUUID();
+    const tipo = await TipoActivo.findByPk(value.tipo_activo_id);
+    const ambiente = await Ambiente.findByPk(value.ambiente_id);
     
-    const activo = await Activo.create(value);
+    if (!tipo || !ambiente) {
+      await t.rollback();
+      return res.status(400).json({ message: 'Tipo de activo o ambiente inválido' });
+    }
+    
+    // Calcular numero correlativo
+    const maxCorrelativo = await Activo.max('numero_correlativo', { transaction: t }) || 0;
+    const numero_correlativo = maxCorrelativo + 1;
+    
+    // Generar código: XYZAACC-GG
+    // X = 1, YZ = 50
+    const AA = tipo.codigo.toString().padStart(2, '0');
+    const CC = ambiente.codigo.toString().padStart(2, '0');
+    const NN = numero_correlativo; // Número sin padding en el ejemplo, o se puede agregar padding
+    
+    const fechaIngreso = value.fecha_ingreso ? new Date(value.fecha_ingreso) : new Date();
+    const GG = (fechaIngreso.getFullYear().toString()).slice(-2);
+    
+    const codigo_activo = `150${AA}${CC}${NN}-${GG}`;
+    
+    value.numero_correlativo = numero_correlativo;
+    value.codigo_activo = codigo_activo;
+    
+    if (req.file) {
+      value.imagen = `/uploads/activos/${req.file.filename}`;
+    }
+    
+    const activo = await Activo.create(value, { transaction: t });
+    await t.commit();
+    
     res.status(201).json(activo);
   } catch (error) {
+    await t.rollback();
     console.error(error);
     res.status(500).json({ message: 'Error al registrar activo' });
   }
 };
 
-exports.updateStatus = async (req, res) => {
+exports.update = async (req, res) => {
   const { id } = req.params;
-  const { error, value } = updateStatusSchema.validate(req.body);
+  const { error, value } = updateSchema.validate(req.body);
   if (error) return res.status(400).json({ error: error.details[0].message });
   
-  const { ambiente_id, observaciones } = value;
-  const usuario_id = req.user.id;
-  
-  const t = await sequelize.transaction();
-  
   try {
-    const activo = await Activo.findByPk(id, { transaction: t });
-    if (!activo) {
-      await t.rollback();
-      return res.status(404).json({ message: 'Activo no encontrado' });
+    const activo = await Activo.findByPk(id);
+    if (!activo) return res.status(404).json({ message: 'Activo no encontrado' });
+    
+    if (req.file) {
+      value.imagen = `/uploads/activos/${req.file.filename}`;
     }
     
-    const ambiente_origen_id = activo.ambiente_id;
-
-    // 1. Update active
-    activo.ambiente_id = ambiente_id;
-    await activo.save({ transaction: t });
-    
-    // 2. Register movement
-    await Movimiento.create({
-      activo_id: id,
-      ambiente_origen_id,
-      ambiente_destino_id: ambiente_id,
-      usuario_id,
-      observaciones
-    }, { transaction: t });
-    
-    await t.commit();
-    res.json({ message: 'Traslado registrado correctamente' });
+    await activo.update(value);
+    res.json(activo);
   } catch (error) {
-    await t.rollback();
-    res.status(500).json({ message: error.message || 'Error en la transacción de traslado' });
+    console.error(error);
+    res.status(500).json({ message: 'Error al actualizar activo' });
+  }
+};
+
+exports.delete = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const activo = await Activo.findByPk(id);
+    if (!activo) return res.status(404).json({ message: 'Activo no encontrado' });
+    
+    await activo.destroy();
+    res.json({ message: 'Activo eliminado correctamente' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error al eliminar activo' });
   }
 };

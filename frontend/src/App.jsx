@@ -2,7 +2,9 @@ import { BrowserRouter as Router, Routes, Route, Navigate, Link, useLocation } f
 import { AuthProvider, useAuth } from './context/AuthContext';
 import LoginPage from './pages/LoginPage';
 import InventoryPage from './pages/InventoryPage';
-import { LayoutDashboard, Monitor, LogOut, Settings, Bell, Search, Menu } from 'lucide-react';
+import ReportsPage from './pages/ReportsPage';
+import AmbientesPage from './pages/AmbientesPage';
+import { LayoutDashboard, Monitor, LogOut, Settings, Bell, Search, Menu, FileText, Building, Shield, Users } from 'lucide-react';
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
@@ -14,9 +16,12 @@ const Sidebar = () => {
   const { logout } = useAuth();
 
   const menuItems = [
-    { path: '/inventario', icon: <Monitor size={20} />, label: 'Workstations' },
-    { path: '#', icon: <LayoutDashboard size={20} />, label: 'Dashboard' },
-    { path: '#', icon: <Settings size={20} />, label: 'Settings' },
+    { path: '/', icon: <LayoutDashboard size={20} />, label: 'Panel de Control' },
+    { path: '/inventario', icon: <Monitor size={20} />, label: 'Activos Fijos' },
+    { path: '/ambientes', icon: <Building size={20} />, label: 'Ambientes' },
+    { path: '/reportes', icon: <FileText size={20} />, label: 'Reportes' },
+    { path: '/usuarios', icon: <Users size={20} />, label: 'Roles y Permisos' },
+    { path: '/configuracion', icon: <Settings size={20} />, label: 'Configuración' },
   ];
 
   return (
@@ -26,16 +31,16 @@ const Sidebar = () => {
       <div className="h-16 px-6 flex items-center border-b border-surface-container-highest">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded bg-primary-container text-on-primary-container flex items-center justify-center font-bold text-sm">
-            LP
+            IT
           </div>
-          <span className="font-semibold text-on-surface tracking-tight">Lab Precision</span>
+          <span className="font-semibold text-on-surface tracking-tight">Inventario ITBM</span>
         </div>
       </div>
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto p-4 space-y-1">
         <div className="px-3 pb-2 text-label-caps text-on-surface-variant uppercase tracking-wider mb-2 mt-2">
-          Administration
+          Administración
         </div>
         
         {menuItems.map((item) => {
@@ -66,7 +71,7 @@ const Sidebar = () => {
           className="flex items-center gap-3 px-3 py-2 rounded-md w-full text-on-surface-variant hover:bg-error-container hover:text-on-error-container transition-colors text-sm font-medium"
         >
           <LogOut size={20} className="text-outline" />
-          Logout
+          Cerrar Sesión
         </button>
       </div>
     </aside>
@@ -82,14 +87,6 @@ const Header = () => {
         <button className="md:hidden text-on-surface-variant p-2 -ml-2 rounded hover:bg-surface-container-low">
           <Menu size={20} />
         </button>
-        <div className="hidden sm:flex items-center relative">
-          <Search size={16} className="absolute left-3 text-outline" />
-          <input 
-            type="text" 
-            placeholder="Search workstations, assets..." 
-            className="pl-9 pr-4 py-1.5 bg-surface-container-low border-none rounded text-sm text-on-surface focus:ring-2 focus:ring-secondary/20 w-64"
-          />
-        </div>
       </div>
       
       <div className="flex items-center gap-4">
@@ -100,8 +97,8 @@ const Header = () => {
         <div className="h-6 w-px bg-surface-container-highest"></div>
         <div className="flex items-center gap-3">
           <div className="text-right hidden sm:block">
-            <div className="text-sm font-medium text-on-surface">{user?.nombre || 'Admin User'}</div>
-            <div className="text-xs text-on-surface-variant capitalize">{user?.rol || 'Administrator'}</div>
+            <div className="text-sm font-medium text-on-surface">{user?.nombre || 'Usuario'}</div>
+            <div className="text-xs text-on-surface-variant capitalize">{user?.rol || 'Administrador'}</div>
           </div>
           <div className="w-8 h-8 rounded-full bg-primary-fixed text-on-primary-fixed flex items-center justify-center font-bold text-sm">
             {(user?.nombre || 'A').charAt(0).toUpperCase()}
@@ -141,6 +138,26 @@ function AppContent() {
             <ProtectedRoute>
               <DashboardLayout>
                 <InventoryPage />
+              </DashboardLayout>
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/ambientes" 
+          element={
+            <ProtectedRoute>
+              <DashboardLayout>
+                <AmbientesPage />
+              </DashboardLayout>
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/reportes" 
+          element={
+            <ProtectedRoute>
+              <DashboardLayout>
+                <ReportsPage />
               </DashboardLayout>
             </ProtectedRoute>
           } 

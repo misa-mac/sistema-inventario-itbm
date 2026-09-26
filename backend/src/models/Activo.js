@@ -1,6 +1,7 @@
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../../database');
 const Ambiente = require('./Ambiente');
+const TipoActivo = require('./TipoActivo');
 
 const Activo = sequelize.define('Activo', {
   id: {
@@ -8,30 +9,22 @@ const Activo = sequelize.define('Activo', {
     defaultValue: DataTypes.UUIDV4,
     primaryKey: true,
   },
-  uuid: {
+  codigo_activo: {
     type: DataTypes.STRING,
     unique: true,
-  },
-  nombre: {
-    type: DataTypes.STRING,
     allowNull: false,
   },
-  tipo: {
-    type: DataTypes.STRING,
+  numero_correlativo: {
+    type: DataTypes.INTEGER,
     allowNull: false,
   },
-  marca: {
-    type: DataTypes.STRING,
-  },
-  modelo: {
-    type: DataTypes.STRING,
-  },
-  numero_serie: {
-    type: DataTypes.STRING,
-  },
-  estado: {
-    type: DataTypes.ENUM('activo', 'en_reparacion', 'baja', 'extraviado'),
-    defaultValue: 'activo',
+  tipo_activo_id: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    references: {
+      model: TipoActivo,
+      key: 'id'
+    }
   },
   ambiente_id: {
     type: DataTypes.UUID,
@@ -41,15 +34,34 @@ const Activo = sequelize.define('Activo', {
       key: 'id'
     }
   },
-  qr_codigo: {
+  origen: {
     type: DataTypes.STRING,
-    unique: true,
+    allowNull: false,
   },
-  imagen_url: {
+  especificacion_origen: {
     type: DataTypes.STRING,
   },
-  observaciones: {
+  descripcion: {
     type: DataTypes.TEXT,
+  },
+  responsable: {
+    type: DataTypes.STRING,
+  },
+  fecha_ingreso: {
+    type: DataTypes.DATE,
+    allowNull: false,
+    defaultValue: DataTypes.NOW,
+  },
+  valor: {
+    type: DataTypes.DECIMAL(10, 2),
+  },
+  imagen: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  estado: {
+    type: DataTypes.ENUM('Activo', 'Inactivo', 'Dañado'),
+    defaultValue: 'Activo',
   },
 }, {
   tableName: 'activos',
@@ -60,5 +72,8 @@ const Activo = sequelize.define('Activo', {
 
 Activo.belongsTo(Ambiente, { foreignKey: 'ambiente_id', as: 'ambiente' });
 Ambiente.hasMany(Activo, { foreignKey: 'ambiente_id', as: 'activos' });
+
+Activo.belongsTo(TipoActivo, { foreignKey: 'tipo_activo_id', as: 'tipo' });
+TipoActivo.hasMany(Activo, { foreignKey: 'tipo_activo_id', as: 'activos' });
 
 module.exports = Activo;
