@@ -17,6 +17,7 @@ const inventoryRoutes = require('./src/routes/inventoryRoutes');
 const ambienteRoutes = require('./src/routes/ambienteRoutes');
 const tipoActivoRoutes = require('./src/routes/tipoActivoRoutes');
 const reportRoutes = require('./src/routes/reportRoutes');
+const usuarioRoutes = require('./src/routes/usuarioRoutes');
 
 dotenv.config();
 
@@ -35,6 +36,7 @@ app.use('/api/inventory', inventoryRoutes);
 app.use('/api/ambientes', ambienteRoutes);
 app.use('/api/tipos-activos', tipoActivoRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/usuarios', usuarioRoutes);
 
 // Configuración Servidor
 const PORT = process.env.PORT || 3000;

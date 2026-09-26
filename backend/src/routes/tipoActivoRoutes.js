@@ -18,5 +18,8 @@ const verifyToken = (req, res, next) => {
 router.use(verifyToken);
 
 router.get('/', tipoActivoController.getAll);
+router.post('/', tipoActivoController.create);
+router.put('/:id', tipoActivoController.update);
+router.delete('/:id', tipoActivoController.delete);
 
 module.exports = router;

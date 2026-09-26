@@ -32,12 +32,21 @@ const LoginPage = () => {
       
       <div className="bg-surface-container-lowest p-8 rounded-xl border border-surface-container-highest shadow-sm w-full max-w-md">
         
-        <div className="mb-8">
-          <div className="h-14 w-14 bg-primary-container text-inverse-primary flex items-center justify-center rounded-lg mb-4">
+        <div className="mb-8 flex flex-col items-center sm:items-start text-center sm:text-left">
+          <img 
+            src="/logo.png" 
+            alt="Logo Institución" 
+            className="h-16 w-auto object-contain mb-4"
+            onError={(e) => {
+              e.target.style.display = 'none';
+              e.target.nextSibling.style.display = 'flex';
+            }}
+          />
+          <div className="h-14 w-14 bg-primary-container text-inverse-primary flex items-center justify-center rounded-lg mb-4 hidden" style={{display: 'none'}}>
             <Server size={28} />
           </div>
-          <h2 className="font-h2 text-h2 text-on-surface mb-2 tracking-tight">Lab Precision</h2>
-          <p className="text-on-surface-variant text-body-sm">Control Panel Authentication</p>
+          <h2 className="font-h2 text-h2 text-on-surface mb-2 tracking-tight">Instituto ITBM</h2>
+          <p className="text-on-surface-variant text-body-sm">Autenticación de Inventario</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6">

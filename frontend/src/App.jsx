@@ -1,10 +1,15 @@
+import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import LoginPage from './pages/LoginPage';
 import InventoryPage from './pages/InventoryPage';
 import ReportsPage from './pages/ReportsPage';
 import AmbientesPage from './pages/AmbientesPage';
-import { LayoutDashboard, Monitor, LogOut, Settings, Bell, Search, Menu, FileText, Building, Shield, Users } from 'lucide-react';
+import UsuariosPage from './pages/UsuariosPage';
+import DashboardPage from './pages/DashboardPage';
+import ConfiguracionPage from './pages/ConfiguracionPage';
+import api from './services/api';
+import { LayoutDashboard, Monitor, LogOut, Settings, Bell, Search, Menu, FileText, Building, Shield, Users, AlertTriangle, Info } from 'lucide-react';
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
@@ -30,10 +35,22 @@ const Sidebar = () => {
       {/* Brand */}
       <div className="h-16 px-6 flex items-center border-b border-surface-container-highest">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded bg-primary-container text-on-primary-container flex items-center justify-center font-bold text-sm">
+          <img 
+            src="/logo.png" 
+            alt="Logo ITBM" 
+            className="w-8 h-8 object-contain"
+            onError={(e) => {
+              e.target.style.display = 'none';
+              e.target.nextSibling.style.display = 'flex';
+            }}
+          />
+          <div className="w-8 h-8 rounded bg-primary-container text-on-primary-container flex items-center justify-center font-bold text-sm hidden" style={{display: 'none'}}>
             IT
           </div>
-          <span className="font-semibold text-on-surface tracking-tight">Inventario ITBM</span>
+          <span className="font-semibold text-on-surface tracking-tight leading-tight">
+            Instituto<br/>
+            <span className="text-xs text-primary font-bold">Bolivia Mar</span>
+          </span>
         </div>
       </div>
 
@@ -80,7 +97,38 @@ const Sidebar = () => {
 
 const Header = () => {
   const { user } = useAuth();
-  
+  const [showNotifs, setShowNotifs] = useState(false);
+  const [notifs, setNotifs] = useState([]);
+
+  useEffect(() => {
+    if (user) {
+      api.get('/reports/summary').then(res => {
+        const danados = res.data.porEstado.find(e => e.estado === 'Dañado')?.cantidad || 0;
+        let newNotifs = [];
+        
+        if (danados > 0) {
+          newNotifs.push({
+            id: 1,
+            title: 'Atención Requerida',
+            message: `Existen ${danados} equipos registrados con estado "Dañado".`,
+            type: 'warning',
+            time: 'Reciente'
+          });
+        }
+        
+        newNotifs.push({
+          id: 2,
+          title: 'Inicio de Sesión',
+          message: `Bienvenido al sistema, ${user.nombre || 'Usuario'}.`,
+          type: 'info',
+          time: 'Hoy'
+        });
+        
+        setNotifs(newNotifs);
+      }).catch(console.error);
+    }
+  }, [user]);
+
   return (
     <header className="h-16 bg-surface-container-lowest border-b border-surface-container-highest flex items-center justify-between px-4 sm:px-6 sticky top-0 z-40">
       <div className="flex items-center gap-4">
@@ -90,10 +138,48 @@ const Header = () => {
       </div>
       
       <div className="flex items-center gap-4">
-        <button className="text-on-surface-variant relative p-2 rounded-full hover:bg-surface-container-low">
-          <Bell size={20} />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full"></span>
-        </button>
+        {/* Notificaciones */}
+        <div className="relative">
+          <button 
+            onClick={() => setShowNotifs(!showNotifs)}
+            className="text-on-surface-variant relative p-2 rounded-full hover:bg-surface-container-low transition-colors"
+          >
+            <Bell size={20} />
+            {notifs.length > 0 && (
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full animate-pulse"></span>
+            )}
+          </button>
+
+          {showNotifs && (
+            <div className="absolute right-0 mt-2 w-80 bg-surface-container-lowest border border-surface-container-highest rounded-xl shadow-lg overflow-hidden animate-fade-in z-50">
+              <div className="p-4 border-b border-surface-container-highest bg-surface-bright flex justify-between items-center">
+                <h3 className="font-medium text-on-surface">Notificaciones</h3>
+                <span className="text-xs bg-primary-container text-on-primary-container px-2 py-0.5 rounded-full font-bold">{notifs.length}</span>
+              </div>
+              <div className="max-h-80 overflow-y-auto">
+                {notifs.length === 0 ? (
+                  <div className="p-6 text-center text-on-surface-variant text-sm">No tienes notificaciones.</div>
+                ) : (
+                  notifs.map(n => (
+                    <div key={n.id} className="p-4 border-b border-surface-container-highest last:border-0 hover:bg-surface-container/50 transition-colors cursor-default">
+                      <div className="flex gap-3">
+                        <div className={`mt-0.5 w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${n.type === 'warning' ? 'bg-amber-100 text-amber-600' : 'bg-primary-container text-primary'}`}>
+                          {n.type === 'warning' ? <AlertTriangle size={14} /> : <Info size={14} />}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-on-surface mb-0.5">{n.title}</p>
+                          <p className="text-xs text-on-surface-variant leading-relaxed">{n.message}</p>
+                          <p className="text-[10px] text-on-surface-variant/70 mt-2 font-medium uppercase tracking-wider">{n.time}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
         <div className="h-6 w-px bg-surface-container-highest"></div>
         <div className="flex items-center gap-3">
           <div className="text-right hidden sm:block">
@@ -162,7 +248,36 @@ function AppContent() {
             </ProtectedRoute>
           } 
         />
-        <Route path="/" element={<Navigate to={isAuthenticated ? "/inventario" : "/login"} />} />
+        <Route 
+          path="/usuarios" 
+          element={
+            <ProtectedRoute>
+              <DashboardLayout>
+                <UsuariosPage />
+              </DashboardLayout>
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/configuracion" 
+          element={
+            <ProtectedRoute>
+              <DashboardLayout>
+                <ConfiguracionPage />
+              </DashboardLayout>
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/" 
+          element={
+            <ProtectedRoute>
+              <DashboardLayout>
+                <DashboardPage />
+              </DashboardLayout>
+            </ProtectedRoute>
+          } 
+        />
       </Routes>
     </Router>
   );
