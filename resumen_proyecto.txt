@@ -86,3 +86,63 @@ El proyecto v2.0 ha completado exitosamente su Roadmap original (Fase 1) y ha in
 -----------------------------------------------------------
 Para escalar el sistema a un nivel superior, queda pendiente el siguiente módulo externo:
 - **Módulo de Auditorías (App Móvil / Sistema Externo):** Sistema para escanear masivamente códigos QR con un teléfono celular o lector externo, y conciliar automáticamente los equipos físicos vs. la base de datos para generar actas de sobrantes y faltantes de forma automatizada. (El estado del hardware ya está preparado para esto, pero requiere desarrollo de un cliente de escáner).
+
+9. ESTRUCTURA DE LA BASE DE DATOS (ESQUEMA RELACIONAL)
+-----------------------------------------------------------
+La base de datos PostgreSQL está normalizada y gestionada por Sequelize. Consta de las siguientes tablas principales:
+
+1. Usuarios
+   - id (UUID, PK)
+   - nombre_completo (String)
+   - email (String, Unique)
+   - password (String, Hash)
+   - rol (Enum: 'admin', 'tecnico', 'espectador')
+
+2. TipoActivos (Categorías de hardware)
+   - id (UUID, PK)
+   - nombre (String, Unique)
+   - codigo (Integer, 2 dígitos para el QR "AA")
+
+3. Ambientes (Laboratorios, Talleres, Oficinas)
+   - id (UUID, PK)
+   - nombre (String)
+   - codigo (Integer, 2 dígitos para el QR "CC")
+   - ubicacion (String)
+   - descripcion (Text)
+
+4. Activos (Equipos y Hardware)
+   - id (UUID, PK)
+   - codigo_activo (String, Unique, Formato: XYZAACC-GG)
+   - numero_correlativo (Integer)
+   - tipo_activo_id (UUID, FK -> TipoActivos)
+   - ambiente_id (UUID, FK -> Ambientes)
+   - origen (String)
+   - especificacion_origen (String)
+   - descripcion (Text)
+   - responsable (String)
+   - fecha_ingreso (Date)
+   - valor (Decimal)
+   - imagen (String, Ruta archivo)
+   - estado (Enum: 'Activo', 'Inactivo', 'Dañado')
+
+5. Movimientos (Historial de Traslados, Mantenimientos y Bajas)
+   - id (UUID, PK)
+   - tipo_evento (String: 'traslado', 'mantenimiento', 'baja')
+   - activo_id (UUID, FK -> Activos)
+   - usuario_id (UUID, FK -> Usuarios)
+   - ambiente_origen_id (UUID, FK -> Ambientes)
+   - ambiente_destino_id (UUID, FK -> Ambientes, nullable)
+   - estado_anterior (String)
+   - estado_nuevo (String)
+   - costo_mantenimiento (Decimal, nullable)
+   - observaciones (Text)
+   - created_at (Date)
+
+6. Notificaciones (Alertas del sistema)
+   - id (UUID, PK)
+   - usuario_id (UUID, FK -> Usuarios, nullable para globales)
+   - titulo (String)
+   - mensaje (Text)
+   - tipo (String: 'info', 'warning', 'error', 'success')
+   - leida (Boolean, default: false)
+   - created_at (Date)
